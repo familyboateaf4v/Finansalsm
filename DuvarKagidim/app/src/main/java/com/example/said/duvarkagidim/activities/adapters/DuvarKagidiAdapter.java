@@ -2,14 +2,13 @@ package com.example.said.duvarkagidim.activities.adapters;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.media.audiofx.Equalizer;
 import android.net.Uri;
 import android.os.Environment;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -30,17 +29,23 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.example.said.duvarkagidim.BuildConfig;
 import com.example.said.duvarkagidim.R;
+import com.example.said.duvarkagidim.activities.activities.DuvarKagidiActivity;
+import com.example.said.duvarkagidim.activities.activities.MainActivity;
 import com.example.said.duvarkagidim.activities.models.DuvarKagidi;
+import com.example.said.duvarkagidim.activities.saveImageHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
+
+import dmax.dialog.SpotsDialog;
 
 public class DuvarKagidiAdapter extends RecyclerView.Adapter<DuvarKagidiAdapter.DuvarKagidiViewHolder> {
 
@@ -110,7 +115,7 @@ public class DuvarKagidiAdapter extends RecyclerView.Adapter<DuvarKagidiAdapter.
                     duvarKagidiPaylas(duvarKagidiList.get(getAdapterPosition()));
                     break;
                 case R.id.button_download:
-                    duvarKagidiIndir(duvarKagidiList.get(getAdapterPosition()));
+                    duvarKagigiKaydet(duvarKagidiList.get(getAdapterPosition()));
                     break;
             }
 
@@ -152,7 +157,7 @@ public class DuvarKagidiAdapter extends RecyclerView.Adapter<DuvarKagidiAdapter.
             return bmpUri;
         }
 
-        private void duvarKagidiIndir(final DuvarKagidi duvarKagidi) {
+       /* private void duvarKagidiIndir(final DuvarKagidi duvarKagidi) {
             ((Activity) context).findViewById(R.id.progressbar).setVisibility(View.VISIBLE);
 
             Glide.with(context)
@@ -174,42 +179,30 @@ public class DuvarKagidiAdapter extends RecyclerView.Adapter<DuvarKagidiAdapter.
 
                         }
                     });
-        }
+        }*/
 
-        private Uri duvarKagigiKaydet(Bitmap bitmap, String id) {
-            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale((Activity)context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-
-                    Intent intent = new Intent();
-                    intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-
-                    Uri uri = Uri.fromParts("package", context.getPackageName(), null);
-                    intent.setData(uri);
-                    context.startActivity(intent);
-
-                } else {
-                    ActivityCompat.requestPermissions((Activity)context, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 100);
-                }
-                return null;
+        private void duvarKagigiKaydet(final DuvarKagidi duvarKagidi) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(context, "izin vermeniz gerekiyor",Toast.LENGTH_LONG).show();
+                ActivityCompat.requestPermissions((Activity)context, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 110);
+                return ;
             }
-            File folder = new File(Environment.getExternalStorageDirectory().toString() + "/DuvarKagidim");
-            folder.mkdir();
+            else {
+                AlertDialog dialog = new SpotsDialog(context);
+                dialog.show();
+                dialog.setMessage("indiriliyor...");
 
-            File file = new File(folder, id + ".jpg");
-            try {
-                FileOutputStream out = new FileOutputStream(file);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-                out.flush();
-                out.close();
-
-                return FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", file);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                String filename = UUID.randomUUID().toString()+"jpg";
+                Picasso.with(context)
+                        .load(duvarKagidi.url)
+                        .into(new saveImageHelper(context,
+                                dialog,
+                                context.getApplicationContext().getContentResolver(),
+                                filename,
+                                "Image description"));
             }
 
-            return null;
+
         }
 
         @Override
